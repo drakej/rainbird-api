@@ -52,8 +52,8 @@ func Controller(w http.ResponseWriter, r *http.Request) {
 		Id:     45010,
 		Method: "requestWeatherAndStatus",
 		Params: map[string]string{
-			"StickId": "macAddress to be added to config",
-			"ZipCode": "a zip code also to be added",
+			"StickId": viper.GetString("controller.mac"),
+			"ZipCode": viper.GetString("controller.zipcode"),
 			"Country": "US",
 		},
 		JsonRPC: "2.0",

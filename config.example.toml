@@ -1,0 +1,11 @@
+[controller]
+ip = "192.168.1.2"
+mac = "4CA161000000"
+key = "putyourkeyhere"
+zipcode = "88888"
+
+[rainbirdcloud]
+host = "rdz-rbcloud.rainbird.com"
+
+[rest]
+port = 8080
