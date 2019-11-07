@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -25,6 +26,8 @@ type ControllerInfo struct {
 	Name              string
 	ProgramNames      map[int]string
 }
+
+var controllerInfo ControllerInfo
 
 func main() {
 	LoadConfig()
@@ -47,54 +50,56 @@ func Index(w http.ResponseWriter, r *http.Request) {
 }
 
 func Controller(w http.ResponseWriter, r *http.Request) {
+	if controllerInfo.Name == "" {
+		log.Info("Retrieving Controller Info from RainBird Cloud")
+		requestData := CloudRPCRequest{
+			Id:     int(time.Now().Unix()),
+			Method: "requestWeatherAndStatus",
+			Params: map[string]interface{}{
+				"StickId": viper.GetString("controller.mac"),
+				"ZipCode": viper.GetString("controller.zipcode"),
+				"Country": "US",
+			},
+			JsonRPC: "2.0",
+		}
 
-	requestData := CloudRPCRequest{
-		Id:     45010,
-		Method: "requestWeatherAndStatus",
-		Params: map[string]string{
-			"StickId": viper.GetString("controller.mac"),
-			"ZipCode": viper.GetString("controller.zipcode"),
-			"Country": "US",
-		},
-		JsonRPC: "2.0",
+		jsonData, err := json.Marshal(requestData)
+
+		if err != nil {
+			log.Error("Could not marshal json for cloud status request")
+		}
+
+		reader := bytes.NewReader(jsonData)
+
+		resp, err := http.Post(fmt.Sprintf("http://%s/phone-api", viper.GetString("rainbirdcloud.host")), "application/json", reader)
+
+		if err != nil {
+			log.Error(err)
+		}
+
+		var RPCResponse CloudRPCResponse
+
+		respBody, err := ioutil.ReadAll(resp.Body)
+
+		if err != nil {
+			log.Error(err)
+		}
+
+		err = json.Unmarshal(respBody, &RPCResponse)
+
+		if err != nil {
+			log.Error(err)
+		}
+
+		sipCommand("ModelAndVersionRequest")
+
+		controllerInfo = ControllerInfo{
+			StationNames:      RPCResponse.Result.Controller.StationNames,
+			AvailableStations: RPCResponse.Result.Controller.AvailableStations,
+			Name:              RPCResponse.Result.Controller.Name,
+			ProgramNames:      RPCResponse.Result.Controller.ProgramNames,
+		}
 	}
 
-	jsonData, err := json.Marshal(requestData)
-
-	if err != nil {
-		log.Error("Could not marshal json for cloud status request")
-	}
-
-	reader := bytes.NewReader(jsonData)
-
-	resp, err := http.Post(fmt.Sprintf("http://%s/phone-api", viper.GetString("rainbirdcloud.host")), "application/json", reader)
-
-	if err != nil {
-		log.Error(err)
-	}
-
-	var RPCResponse CloudRPCResponse
-
-	respBody, err := ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		log.Error(err)
-	}
-
-	err = json.Unmarshal(respBody, &RPCResponse)
-
-	if err != nil {
-		log.Error(err)
-	}
-
-	encryptedData := Encrypt("test", "youramazingcontrollersecret")
-
-	log.Info(Decrypt(encryptedData, "youramazingcontrollersecret"))
-
-	json.NewEncoder(w).Encode(ControllerInfo{
-		StationNames:      RPCResponse.Result.Controller.StationNames,
-		AvailableStations: RPCResponse.Result.Controller.AvailableStations,
-		Name:              RPCResponse.Result.Controller.Name,
-		ProgramNames:      RPCResponse.Result.Controller.ProgramNames,
-	})
+	json.NewEncoder(w).Encode(controllerInfo)
 }
