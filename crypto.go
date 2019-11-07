@@ -5,7 +5,6 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/hex"
 	"io"
 	"strings"
 
@@ -34,13 +33,12 @@ func Encrypt(data string, key string) string {
 	if len(codeData)%aes.BlockSize != 0 {
 		dataLen := len(codeData)
 
-		remaining := aes.BlockSize - dataLen
-		padLength := remaining % aes.BlockSize
+		remaining := dataLen % aes.BlockSize
+
+		padLength := aes.BlockSize - remaining
 
 		codeData = codeData + strings.Repeat("\x10", padLength)
 	}
-
-	log.Error(hex.EncodeToString([]byte(codeData)))
 
 	codeByteData := []byte(codeData)
 
@@ -58,7 +56,7 @@ func Encrypt(data string, key string) string {
 
 func Decrypt(encryptedData string, key string) string {
 
-	log.Info(hex.EncodeToString([]byte(encryptedData)))
+	log.Error(len(encryptedData))
 	iv := []byte(encryptedData[32:48])
 
 	encryptedByteData := []byte(encryptedData[48:])
@@ -67,10 +65,6 @@ func Decrypt(encryptedData string, key string) string {
 	m.Write([]byte(key))
 
 	symmetricKey := m.Sum(nil)[:32]
-
-	log.Info(hex.EncodeToString(iv))
-	log.Info(hex.EncodeToString(encryptedByteData))
-
 	block, err := aes.NewCipher(symmetricKey)
 
 	if err != nil {
