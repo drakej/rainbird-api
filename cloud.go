@@ -3,10 +3,10 @@ package main
 import "encoding/json"
 
 type CloudRPCRequest struct {
-	Id      int               `json:"id"`
-	Method  string            `json:"method"`
-	Params  map[string]string `json:"params"`
-	JsonRPC string            `json:"jsonrpc"`
+	Id      int                    `json:"id"`
+	Method  string                 `json:"method"`
+	Params  map[string]interface{} `json:"params"`
+	JsonRPC string                 `json:"jsonrpc"`
 }
 
 type CloudRPCResponse struct {
