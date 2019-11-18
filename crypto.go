@@ -55,8 +55,6 @@ func Encrypt(data string, key string) string {
 }
 
 func Decrypt(encryptedData string, key string) string {
-
-	log.Error(len(encryptedData))
 	iv := []byte(encryptedData[32:48])
 
 	encryptedByteData := []byte(encryptedData[48:])
