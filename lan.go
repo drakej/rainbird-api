@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -13,42 +15,56 @@ import (
 )
 
 type Command struct {
-	RequestCode  string `json:"command"`
-	ResponseCode string `json:"response"`
-	Parameter    int    `json:"parameter"`
-	ParameterOne int    `json:"parameterOne"`
-	ParameterTwo int    `json:"parameterTwo"`
-	Length       int    `json:"length"`
+	Length   int    `json:"length"`
+	Command  string `json:"command"`
+	Response string `json:"response"`
 }
 
 type Response struct {
+	Length int              `json:"length"`
+	Type   string           `json:"type"`
+	Params map[string]Param `json:"params"`
 }
 
-var sipIndex map[string]map[string]Command
+type LANRPCResponse struct {
+	Id      int       `json:"id"`
+	Result  LANResult `json:"result"`
+	JsonRPC string    `json:"jsonrpc"`
+}
 
-var sipCommandIndex map[string]Command
+type RPCResponse struct {
+	Id      int                    `json:"id"`
+	Result  map[string]interface{} `json:"result"`
+	JsonRPC string                 `json:"jsonrpc"`
+}
+
+type LANResult struct {
+	Length int    `json:"length"`
+	Data   string `json:"data"`
+}
+
+type SIPConfig struct {
+	Loaded    bool
+	Commands  map[string]Command  `json:"ControllerCommands"`
+	Responses map[string]Response `json:"ControllerResponses"`
+}
+
+type Param struct {
+	Position int `json:"position"`
+	Length   int `json:"length"`
+}
+
+var sipIndex SIPConfig
 
 var headers map[string]string
 
-func sipCommand(command string, args ...string) {
-	loadSipIndex()
-
+func rpcCommand(method string, params map[string]interface{}) (error, RPCResponse) {
 	now := time.Now()
 
-	commandData := sipCommandIndex[command]
-
-	data := commandData.RequestCode
-	for _, arg := range args {
-		data = data + arg
-	}
-
-	payload := CloudRPCRequest{
-		Id:     int(now.Unix()),
-		Method: `tunnelSip`,
-		Params: map[string]interface{}{
-			"data":   data,
-			"length": commandData.Length,
-		},
+	payload := RPCRequest{
+		Id:      int(now.Unix()),
+		Method:  method,
+		Params:  params,
 		JsonRPC: `2.0`,
 	}
 
@@ -76,13 +92,59 @@ func sipCommand(command string, args ...string) {
 		log.Error(err)
 	}
 
-	responseData, _ := ioutil.ReadAll(response.Body)
+	encryptedResponse, _ := ioutil.ReadAll(response.Body)
 
-	log.Info(string(Decrypt(string(responseData), viper.GetString("controller.key"))))
+	var rpcResponse RPCResponse
+
+	if response.StatusCode == 200 {
+		rpcRawResponse := strings.TrimRight(Decrypt(string(encryptedResponse), viper.GetString("controller.key")), "\x00\x0A\x10")
+
+		err = json.Unmarshal([]byte(rpcRawResponse), &rpcResponse)
+
+		if err != nil {
+			log.Error(err)
+		}
+	} else if response.StatusCode == 503 {
+		return errors.New(fmt.Sprintf("rpcResponse: Error code %d received, the controller is most likely locked/busy", response.StatusCode)), rpcResponse
+	}
+
+	return nil, rpcResponse
+}
+
+func sipCommand(command string, args ...string) (string, map[string]string) {
+	loadSipIndex()
+
+	commandData := sipIndex.Commands[command]
+	cmdResponse := make(map[string]string)
+
+	data := commandData.Command
+	for _, arg := range args {
+		data = data + arg
+	}
+
+	err, rpcResponse := rpcCommand(`tunnelSip`, map[string]interface{}{
+		"data":   data,
+		"length": commandData.Length,
+	})
+
+	if err != nil {
+		return "0", cmdResponse
+	}
+
+	responseData := rpcResponse.Result["data"].(string)
+	responseCode := responseData[:2]
+
+	responseType := sipIndex.Responses[responseCode]
+
+	for name, param := range responseType.Params {
+		cmdResponse[name] = responseData[param.Position : param.Position+param.Length]
+	}
+
+	return responseCode, cmdResponse
 }
 
 func loadSipIndex() {
-	if len(sipIndex) == 0 {
+	if !sipIndex.Loaded {
 		headers = map[string]string{
 			"Accept-Language": "en",
 			"Accept-Encoding": "gzip, deflate",
@@ -100,6 +162,6 @@ func loadSipIndex() {
 
 		json.Unmarshal(contents, &sipIndex)
 
-		sipCommandIndex = sipIndex["ControllerCommands"]
+		sipIndex.Loaded = true
 	}
 }

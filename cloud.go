@@ -2,7 +2,7 @@ package main
 
 import "encoding/json"
 
-type CloudRPCRequest struct {
+type RPCRequest struct {
 	Id      int                    `json:"id"`
 	Method  string                 `json:"method"`
 	Params  map[string]interface{} `json:"params"`

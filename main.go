@@ -35,6 +35,8 @@ func main() {
 	viper.SetDefault("controller.ip", "192.168.1.1")
 	viper.SetDefault("rest.port", 8080)
 
+	log.SetLevel(log.DebugLevel)
+
 	log.Info(viper.GetString("controller.ip"))
 	log.Info(viper.GetString("controller.key"))
 	log.Info(viper.GetString("rest.port"))
@@ -52,7 +54,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 func Controller(w http.ResponseWriter, r *http.Request) {
 	if controllerInfo.Name == "" {
 		log.Info("Retrieving Controller Info from RainBird Cloud")
-		requestData := CloudRPCRequest{
+		requestData := RPCRequest{
 			Id:     int(time.Now().Unix()),
 			Method: "requestWeatherAndStatus",
 			Params: map[string]interface{}{
@@ -85,13 +87,26 @@ func Controller(w http.ResponseWriter, r *http.Request) {
 			log.Error(err)
 		}
 
+		log.Debug(string(respBody))
+
 		err = json.Unmarshal(respBody, &RPCResponse)
 
 		if err != nil {
 			log.Error(err)
 		}
 
-		sipCommand("ModelAndVersionRequest")
+		code, responseData := sipCommand("SerialNumberRequest")
+
+		log.Debug(code)
+		log.Debug(responseData)
+
+		err, otherRPCResponse := rpcCommand("getWifiParams", map[string]interface{}{})
+
+		if err != nil {
+			log.Error(err)
+		}
+
+		log.Debug(otherRPCResponse)
 
 		controllerInfo = ControllerInfo{
 			StationNames:      RPCResponse.Result.Controller.StationNames,
