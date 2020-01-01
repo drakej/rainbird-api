@@ -131,13 +131,20 @@ func sipCommand(command string, args ...string) (string, map[string]string) {
 		return "0", cmdResponse
 	}
 
-	responseData := rpcResponse.Result["data"].(string)
-	responseCode := responseData[:2]
+	responseData := ""
+	responseCode := "0"
+	responseType := sipIndex.Responses["00"]
 
-	responseType := sipIndex.Responses[responseCode]
+	if rpcResponse.Result["data"] != nil {
+		responseData = rpcResponse.Result["data"].(string)
 
-	for name, param := range responseType.Params {
-		cmdResponse[name] = responseData[param.Position : param.Position+param.Length]
+		responseCode = responseData[:2]
+
+		responseType = sipIndex.Responses[responseCode]
+
+		for name, param := range responseType.Params {
+			cmdResponse[name] = responseData[param.Position : param.Position+param.Length]
+		}
 	}
 
 	return responseCode, cmdResponse

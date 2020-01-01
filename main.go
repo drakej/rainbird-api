@@ -1,12 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -20,15 +17,6 @@ type Info struct {
 	Build   int
 }
 
-type ControllerInfo struct {
-	StationNames      map[int]string
-	AvailableStations []int
-	Name              string
-	ProgramNames      map[int]string
-}
-
-var controllerInfo ControllerInfo
-
 func main() {
 	LoadConfig()
 
@@ -41,80 +29,40 @@ func main() {
 	log.Info(viper.GetString("controller.key"))
 	log.Info(viper.GetString("rest.port"))
 
-	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/", Index)
-	router.HandleFunc("/controller", Controller)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", viper.GetInt("rest.port")), router))
+	r := mux.NewRouter().StrictSlash(true)
+	r.HandleFunc("/", Index).Methods("GET")
+	r.HandleFunc("/controller", ControllerInfoHandler).Methods("GET")
+
+	// Serial Number of the controller (or maybe the WiFi module? should confirm), comes from local API
+	r.HandleFunc("/controller/serial", ControllerSerialNumberHandler).Methods("GET")
+
+	// The model (ESP-Me, ESP-RZXe, ST8X-Wf, etc.) and the version (major and minor e.g. 2.1), comes from local API
+	// Note: This is from manfacturing and I believe will never change. RB official apps seem to ignore the version data anyways
+	r.HandleFunc("/controller/model", ControllerModelVersionHandler).Methods("GET")
+
+	// This is the firmware of the controller itself (I'm guessing though since there's no reference to confirm)
+	// This is different than the model itself with it's own version from manufacturing
+	r.HandleFunc("/controller/firmware", ControllerFWVersionHandler).Methods("GET")
+
+	// The actual stick has it's own firmware which is reported via cloud for some reason and parsed out
+	// Note: I believe there's only one version of the Wifi module, so right now the FW is at 1.41 as I write this
+	//router.HandleFunc("/wifimodule", WiFiModuleFWVersion)
+
+	r.Use(LoggingMiddleware)
+
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", viper.GetInt("rest.port")), r))
+}
+
+// LoggingMiddleware is responsible for logging mux requests for the REST api
+func LoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Do stuff here
+		log.Infof("%s - %s - %s %s %s %s", r.Host, r.RemoteAddr, r.Method, r.RequestURI, r.Proto, r.UserAgent())
+		// Call the next handler, which can be another middleware in the chain, or the final handler.
+		next.ServeHTTP(w, r)
+	})
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(Info{Name: "rainbird-api", Version: "0.0.1", Build: 1})
-}
-
-func Controller(w http.ResponseWriter, r *http.Request) {
-	if controllerInfo.Name == "" {
-		log.Info("Retrieving Controller Info from RainBird Cloud")
-		requestData := RPCRequest{
-			Id:     int(time.Now().Unix()),
-			Method: "requestWeatherAndStatus",
-			Params: map[string]interface{}{
-				"StickId": viper.GetString("controller.mac"),
-				"ZipCode": viper.GetString("controller.zipcode"),
-				"Country": "US",
-			},
-			JsonRPC: "2.0",
-		}
-
-		jsonData, err := json.Marshal(requestData)
-
-		if err != nil {
-			log.Error("Could not marshal json for cloud status request")
-		}
-
-		reader := bytes.NewReader(jsonData)
-
-		resp, err := http.Post(fmt.Sprintf("http://%s/phone-api", viper.GetString("rainbirdcloud.host")), "application/json", reader)
-
-		if err != nil {
-			log.Error(err)
-		}
-
-		var RPCResponse CloudRPCResponse
-
-		respBody, err := ioutil.ReadAll(resp.Body)
-
-		if err != nil {
-			log.Error(err)
-		}
-
-		log.Debug(string(respBody))
-
-		err = json.Unmarshal(respBody, &RPCResponse)
-
-		if err != nil {
-			log.Error(err)
-		}
-
-		code, responseData := sipCommand("SerialNumberRequest")
-
-		log.Debug(code)
-		log.Debug(responseData)
-
-		err, otherRPCResponse := rpcCommand("getWifiParams", map[string]interface{}{})
-
-		if err != nil {
-			log.Error(err)
-		}
-
-		log.Debug(otherRPCResponse)
-
-		controllerInfo = ControllerInfo{
-			StationNames:      RPCResponse.Result.Controller.StationNames,
-			AvailableStations: RPCResponse.Result.Controller.AvailableStations,
-			Name:              RPCResponse.Result.Controller.Name,
-			ProgramNames:      RPCResponse.Result.Controller.ProgramNames,
-		}
-	}
-
-	json.NewEncoder(w).Encode(controllerInfo)
+	json.NewEncoder(w).Encode(Info{Name: "rainbird-api", Version: "0.0.1"})
 }
