@@ -37,6 +37,8 @@ type FirmwareVersion struct {
 
 var controllerInfo ControllerInfo
 
+var controllerTime string
+
 var serialNumber SerialNumber
 
 var modelVersion ModelVersion
@@ -94,6 +96,14 @@ func ControllerInfoHandler(w http.ResponseWriter, r *http.Request) {
 			ProgramNames:      RPCResponse.Result.Controller.ProgramNames,
 		}
 	}
+
+	err, otherRPCResponse := rpcCommand("getWeatherAdjustmentMask", map[string]interface{}{})
+
+	if err != nil {
+		log.Error(err)
+	}
+
+	log.Debug(otherRPCResponse)
 
 	json.NewEncoder(w).Encode(controllerInfo)
 }
@@ -182,4 +192,34 @@ func ControllerFWVersionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(firmwareVersion)
+}
+
+func ControllerTimeHandler(w http.ResponseWriter, r *http.Request) {
+	log.Info("Retrieving Controller Time from Local API")
+
+	code, responseData := sipCommand("CurrentDateRequest")
+
+	log.Debug(code)
+	log.Debug(responseData)
+
+	// hour := "12"
+	// minute := "00"
+	// second := "00"
+	year, _ := strconv.ParseInt(responseData["year"], 16, 64)
+	month, _ := strconv.ParseInt(responseData["month"], 16, 64)
+	day, _ := strconv.ParseInt(responseData["day"], 16, 64)
+
+	code, responseData = sipCommand("CurrentTimeRequest")
+
+	log.Debug(code)
+	log.Debug(responseData)
+
+	hour, _ := strconv.ParseInt(responseData["hour"], 16, 64)
+	minute, _ := strconv.ParseInt(responseData["minute"], 16, 64)
+	second, _ := strconv.ParseInt(responseData["second"], 16, 64)
+	localLoc, _ := time.LoadLocation("Local")
+
+	datetime := time.Date(int(year), time.Month(int(month)), int(day), int(hour), int(minute), int(second), 0, localLoc)
+
+	json.NewEncoder(w).Encode(datetime.Format(time.UnixDate))
 }

@@ -44,6 +44,9 @@ func main() {
 	// This is different than the model itself with it's own version from manufacturing
 	r.HandleFunc("/controller/firmware", ControllerFWVersionHandler).Methods("GET")
 
+	// The currently configured time on the controller
+	r.HandleFunc("/controller/time", ControllerTimeHandler).Methods("GET")
+
 	// The actual stick has it's own firmware which is reported via cloud for some reason and parsed out
 	// Note: I believe there's only one version of the Wifi module, so right now the FW is at 1.41 as I write this
 	//router.HandleFunc("/wifimodule", WiFiModuleFWVersion)
