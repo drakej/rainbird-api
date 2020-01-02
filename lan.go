@@ -56,7 +56,14 @@ type Param struct {
 
 var sipIndex SIPConfig
 
-var headers map[string]string
+var headers = map[string]string{
+	"Accept-Language": "en",
+	"Accept-Encoding": "gzip, deflate",
+	"User-Agent":      "RainBird/2.0 CFNetwork/811.5.4 Darwin/16.7.0",
+	"Accept":          "*/*",
+	"Connection":      "keep-alive",
+	"Content-Type":    "application/octet-stream",
+}
 
 func rpcCommand(method string, params map[string]interface{}) (error, RPCResponse) {
 	now := time.Now()
@@ -67,6 +74,8 @@ func rpcCommand(method string, params map[string]interface{}) (error, RPCRespons
 		Params:  params,
 		JsonRPC: `2.0`,
 	}
+
+	log.Debug(payload)
 
 	jsonPayload, err := json.Marshal(payload)
 
@@ -87,6 +96,8 @@ func rpcCommand(method string, params map[string]interface{}) (error, RPCRespons
 	}
 
 	response, err := client.Do(req)
+
+	log.Debug(response)
 
 	if err != nil {
 		log.Error(err)
@@ -132,7 +143,7 @@ func sipCommand(command string, args ...string) (string, map[string]string) {
 	}
 
 	responseData := ""
-	responseCode := "0"
+	responseCode := "00"
 	responseType := sipIndex.Responses["00"]
 
 	if rpcResponse.Result["data"] != nil {
@@ -152,15 +163,6 @@ func sipCommand(command string, args ...string) (string, map[string]string) {
 
 func loadSipIndex() {
 	if !sipIndex.Loaded {
-		headers = map[string]string{
-			"Accept-Language": "en",
-			"Accept-Encoding": "gzip, deflate",
-			"User-Agent":      "RainBird/2.0 CFNetwork/811.5.4 Darwin/16.7.0",
-			"Accept":          "*/*",
-			"Connection":      "keep-alive",
-			"Content-Type":    "application/octet-stream",
-		}
-
 		contents, err := ioutil.ReadFile("sipCommands.json")
 
 		if err != nil {
