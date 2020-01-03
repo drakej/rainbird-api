@@ -48,12 +48,17 @@ var firmwareVersion FirmwareVersion
 func ControllerInfoHandler(w http.ResponseWriter, r *http.Request) {
 	if controllerInfo.Name == "" {
 		log.Info("Retrieving Controller Info from RainBird Cloud")
+
+		if zipCode == 0 {
+			zipCode = getZipCode()
+		}
+
 		requestData := RPCRequest{
 			Id:     int(time.Now().Unix()),
 			Method: "requestWeatherAndStatus",
 			Params: map[string]interface{}{
 				"StickId": viper.GetString("controller.mac"),
-				"ZipCode": viper.GetString("controller.zipcode"),
+				"ZipCode": zipCode,
 				"Country": "US",
 			},
 			JsonRPC: "2.0",
@@ -153,7 +158,7 @@ func ControllerModelVersionHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		modelVersion = ModelVersion{
-			Model: model,
+			Model:                 model,
 			ProtocolRevisionMajor: protocolRevisionMajor,
 			ProtocolRevisionMinor: protocolRevisionMinor,
 		}

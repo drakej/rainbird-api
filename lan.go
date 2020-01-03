@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -65,6 +66,10 @@ var headers = map[string]string{
 	"Content-Type":    "application/octet-stream",
 }
 
+var localIPv4Address string
+
+var zipCode int
+
 func rpcCommand(method string, params map[string]interface{}) (error, RPCResponse) {
 	now := time.Now()
 
@@ -88,6 +93,10 @@ func rpcCommand(method string, params map[string]interface{}) (error, RPCRespons
 	reader := bytes.NewReader([]byte(encryptedPayload))
 
 	client := &http.Client{}
+
+	// if localIPv4Address == "" {
+
+	// }
 
 	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s/stick", viper.GetString("controller.ip")), reader)
 
@@ -120,6 +129,22 @@ func rpcCommand(method string, params map[string]interface{}) (error, RPCRespons
 	}
 
 	return nil, rpcResponse
+}
+
+// func getLocalIPAddress() string {
+
+// }
+
+func getZipCode() int {
+	err, response := rpcCommand("getZipCode", map[string]interface{}{})
+
+	if err != nil {
+		return -1
+	}
+
+	zipCode, _ := strconv.Atoi(response.Result["code"].(string))
+
+	return zipCode
 }
 
 func sipCommand(command string, args ...string) (string, map[string]string) {
