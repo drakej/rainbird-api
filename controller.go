@@ -80,13 +80,13 @@ func ControllerInfoHandler(w http.ResponseWriter, r *http.Request) {
 		log.Info("Retrieving Controller Info from RainBird Cloud")
 
 		if zipCode == 0 {
-			zipCode = getZipCode()
+			zipCode, country = getZipCode()
 		}
 
 		response := cloudRPCCommand("requestWeatherAndStatus", map[string]interface{}{
 			"StickId": viper.GetString("controller.mac"),
 			"ZipCode": zipCode,
-			"Country": "US",
+			"Country": country,
 		})
 
 		controllerData := response.Result["Controller"].(map[string]interface{})

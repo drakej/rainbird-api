@@ -73,3 +73,15 @@ func cloudRPCCommand(method string, params map[string]interface{}) RPCResponse {
 
 	return rpcResponse
 }
+
+func getStickIPAddress() string {
+	response := cloudRPCCommand("getStickIpAddress", map[string]interface{}{
+		"StickId": viper.GetString("controller.mac"),
+	})
+
+	stickIp := response.Result["IpAddress"].(string)
+
+	viper.Set("controller.ip", stickIp)
+
+	return stickIp
+}

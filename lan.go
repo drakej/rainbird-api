@@ -69,6 +69,7 @@ var headers = map[string]string{
 var localIPv4Address string
 
 var zipCode int
+var country string
 
 func rpcCommand(method string, params map[string]interface{}) (error, RPCResponse) {
 	now := time.Now()
@@ -93,6 +94,10 @@ func rpcCommand(method string, params map[string]interface{}) (error, RPCRespons
 	reader := bytes.NewReader([]byte(encryptedPayload))
 
 	client := &http.Client{}
+
+	if viper.GetString("controller.ip") == "" {
+		getStickIPAddress()
+	}
 
 	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s/stick", viper.GetString("controller.ip")), reader)
 
@@ -127,16 +132,16 @@ func rpcCommand(method string, params map[string]interface{}) (error, RPCRespons
 	return nil, rpcResponse
 }
 
-func getZipCode() int {
+func getZipCode() (int, string) {
 	err, response := rpcCommand("getZipCode", map[string]interface{}{})
 
 	if err != nil {
-		return -1
+		return -1, ""
 	}
 
 	zipCode, _ := strconv.Atoi(response.Result["code"].(string))
 
-	return zipCode
+	return zipCode, response.Result["country"].(string)
 }
 
 func sipCommand(command string, args ...string) (string, map[string]string) {
