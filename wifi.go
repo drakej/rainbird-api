@@ -7,7 +7,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var wifiParams map[string]interface{}
+func WifiAPModeHandler(w http.ResponseWriter, r *http.Request) {
+	log.Info("Retrieving Wifi APMode")
+
+	code, responseData := rpcCommand("getApMode", map[string]interface{}{})
+
+	log.Debug(code)
+	log.Debug(responseData)
+
+	json.NewEncoder(w).Encode(responseData.Result)
+}
 
 func WifiConfigHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("Retrieving Wifi Configuration from Local API")

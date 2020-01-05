@@ -50,6 +50,9 @@ func main() {
 	// Whether irrigation is currently running
 	r.HandleFunc("/irrigation/state", IrrigationStateHandler).Methods("GET")
 
+	// Wifi Access Point Mode Enabled
+	r.HandleFunc("/wifi/apmode", WifiAPModeHandler).Methods("GET")
+
 	r.HandleFunc("/wifi/ip", WifiIPHandler).Methods("GET")
 
 	// Wifi configuration setup in the RainBird app initially
