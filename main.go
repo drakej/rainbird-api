@@ -47,6 +47,8 @@ func main() {
 	// The currently configured time on the controller
 	r.HandleFunc("/controller/time", ControllerTimeHandler).Methods("GET")
 
+	r.HandleFunc("/irrigation/state", IrrigationStateHandler).Methods("GET")
+
 	// The actual stick has it's own firmware which is reported via cloud for some reason and parsed out
 	// Note: I believe there's only one version of the Wifi module, so right now the FW is at 1.41 as I write this
 	//router.HandleFunc("/wifimodule", WiFiModuleFWVersion)
@@ -59,6 +61,7 @@ func main() {
 // LoggingMiddleware is responsible for logging mux requests for the REST api
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		// Do stuff here
 		log.Infof("%s - %s - %s %s %s %s", r.Host, r.RemoteAddr, r.Method, r.RequestURI, r.Proto, r.UserAgent())
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
