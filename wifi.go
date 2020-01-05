@@ -30,3 +30,14 @@ func WifiIPHandler(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(wifiIPAddress)
 }
+
+func WifiNetworkHandler(w http.ResponseWriter, r *http.Request) {
+	log.Info("Retrieving Wifi Network Status")
+
+	code, responseData := rpcCommand("getNetworkStatus", map[string]interface{}{})
+
+	log.Debug(code)
+	log.Debug(responseData)
+
+	json.NewEncoder(w).Encode(responseData.Result)
+}

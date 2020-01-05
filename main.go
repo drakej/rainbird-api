@@ -55,6 +55,9 @@ func main() {
 	// Wifi configuration setup in the RainBird app initially
 	r.HandleFunc("/wifi/config", WifiConfigHandler).Methods("GET")
 
+	// Wifi Network Status
+	r.HandleFunc("/wifi/network", WifiNetworkHandler).Methods("GET")
+
 	// The actual stick has it's own firmware which is reported via cloud for some reason and parsed out
 	// Note: I believe there's only one version of the Wifi module, so right now the FW is at 1.41 as I write this
 	//router.HandleFunc("/wifimodule", WiFiModuleFWVersion)
