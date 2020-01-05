@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
@@ -14,10 +12,13 @@ import (
 )
 
 type ControllerInfo struct {
-	StationNames      map[int]string
-	AvailableStations []int
+	StationNames      map[string]interface{}
+	AvailableStations []interface{}
 	Name              string
-	ProgramNames      map[int]string
+	ProgramNames      map[string]interface{}
+	SerialNumber      string
+	Model             string
+	Version           string
 }
 
 type SerialNumber struct {
@@ -45,6 +46,35 @@ var modelVersion ModelVersion
 
 var firmwareVersion FirmwareVersion
 
+// ESP_RZXe("ESP-RZXe", "0003", a.b.esp_rzxe, false, 0, 6),
+// ESP_ME("ESP-Me", "0007", a.b.esp_me, true, 4, 6),
+// ST8X_WF("ST8x-WiFi", "0006", a.b.st8wifi, false, 0, 6),
+// ESP_TM2("ESP-TM2", "0005", a.b.esp_tm2, true, 3, 4),
+// ST8X_WF2("ST8x-WiFi2", "0008", a.b.st8wifi, false, 8, 6),
+// ESP_ME3("ESP-ME3", "0009", a.b.esp_me2, true, 4, 6),
+// MOCK_ESP_ME2("ESP=Me2", "0010", a.b.esp_me, true, 4, 6),
+// ESP_TM2v2("ESP-TM2", "000A", a.b.esp_tm2v2, true, 3, 4),
+// ESP_TM2v3("ESP-TM2", "010A", a.b.esp_tm2v3, true, 3, 4),
+// TBOS_BT("TBOS-BT", "0099", a.b.tbos_bt_photo, true, 3, 8),
+// ESP_MEv2("ESP-Me", "0107", a.b.esp_me, true, 4, 6),
+// ESP_RZXev2("ESP-RZXe", "0103", a.b.esp_rzxe, false, 0, 6);
+
+var controllerModels map[int]string = map[int]string{
+	-1:  "Unknown",
+	3:   "ESP-RZXE",
+	5:   "ESP_TM2",
+	6:   "ST8x-WiFi",
+	7:   "ESP-Me",
+	8:   "ST8x-WiFi2",
+	9:   "ESP-ME3",
+	11:  "ESP-TM2v2",
+	16:  "ESP-MEv2 (Mock)",
+	153: "TBOS-BT",
+	259: "ESP-RZXEv2",
+	263: "ESP-MEv2",
+	266: "ESP-TM2v3",
+}
+
 func ControllerInfoHandler(w http.ResponseWriter, r *http.Request) {
 	if controllerInfo.Name == "" {
 		log.Info("Retrieving Controller Info from RainBird Cloud")
@@ -53,62 +83,48 @@ func ControllerInfoHandler(w http.ResponseWriter, r *http.Request) {
 			zipCode = getZipCode()
 		}
 
-		requestData := RPCRequest{
-			Id:     int(time.Now().Unix()),
-			Method: "requestWeatherAndStatus",
-			Params: map[string]interface{}{
-				"StickId": viper.GetString("controller.mac"),
-				"ZipCode": zipCode,
-				"Country": "US",
-			},
-			JsonRPC: "2.0",
-		}
+		response := cloudRPCCommand("requestWeatherAndStatus", map[string]interface{}{
+			"StickId": viper.GetString("controller.mac"),
+			"ZipCode": zipCode,
+			"Country": "US",
+		})
 
-		jsonData, err := json.Marshal(requestData)
+		controllerData := response.Result["Controller"].(map[string]interface{})
 
-		if err != nil {
-			log.Error("Could not marshal json for cloud status request")
-		}
+		_, serialData := sipCommand("SerialNumberRequest")
 
-		reader := bytes.NewReader(jsonData)
+		_, modelVersionData := sipCommand("ModelAndVersionRequest")
 
-		resp, err := http.Post(fmt.Sprintf("http://%s/phone-api", viper.GetString("rainbirdcloud.host")), "application/json", reader)
+		model, err := strconv.Atoi(modelVersionData["modelID"])
 
 		if err != nil {
-			log.Error(err)
+			model = -1
 		}
 
-		var RPCResponse CloudRPCResponse
-
-		respBody, err := ioutil.ReadAll(resp.Body)
+		protocolRevisionMajor, err := strconv.Atoi(modelVersionData["protocolRevisionMajor"])
 
 		if err != nil {
-			log.Error(err)
+			protocolRevisionMajor = 0
 		}
 
-		log.Debug(string(respBody))
-
-		err = json.Unmarshal(respBody, &RPCResponse)
+		protocolRevisionMinor, err := strconv.Atoi(modelVersionData["protocolRevisionMinor"])
 
 		if err != nil {
-			log.Error(err)
+			protocolRevisionMinor = 0
 		}
+
+		version := fmt.Sprintf("%d.%d", protocolRevisionMajor, protocolRevisionMinor)
 
 		controllerInfo = ControllerInfo{
-			StationNames:      RPCResponse.Result.Controller.StationNames,
-			AvailableStations: RPCResponse.Result.Controller.AvailableStations,
-			Name:              RPCResponse.Result.Controller.Name,
-			ProgramNames:      RPCResponse.Result.Controller.ProgramNames,
+			StationNames:      controllerData["customStationNames"].(map[string]interface{}),
+			AvailableStations: controllerData["availableStations"].([]interface{}),
+			Name:              controllerData["customName"].(string),
+			ProgramNames:      controllerData["customProgramNames"].(map[string]interface{}),
+			SerialNumber:      serialData["serialNumber"],
+			Model:             controllerModels[model],
+			Version:           version,
 		}
 	}
-
-	err, otherRPCResponse := rpcCommand("getWeatherAdjustmentMask", map[string]interface{}{})
-
-	if err != nil {
-		log.Error(err)
-	}
-
-	log.Debug(otherRPCResponse)
 
 	json.NewEncoder(w).Encode(controllerInfo)
 }

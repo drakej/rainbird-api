@@ -94,10 +94,6 @@ func rpcCommand(method string, params map[string]interface{}) (error, RPCRespons
 
 	client := &http.Client{}
 
-	// if localIPv4Address == "" {
-
-	// }
-
 	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s/stick", viper.GetString("controller.ip")), reader)
 
 	for name, value := range headers {
@@ -130,10 +126,6 @@ func rpcCommand(method string, params map[string]interface{}) (error, RPCRespons
 
 	return nil, rpcResponse
 }
-
-// func getLocalIPAddress() string {
-
-// }
 
 func getZipCode() int {
 	err, response := rpcCommand("getZipCode", map[string]interface{}{})
