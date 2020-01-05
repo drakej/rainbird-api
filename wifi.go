@@ -22,3 +22,11 @@ func WifiConfigHandler(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(responseData.Result)
 }
+
+func WifiIPHandler(w http.ResponseWriter, r *http.Request) {
+	log.Info("Retrieving Wifi IPv4 Address")
+
+	wifiIPAddress := getStickIPAddress()
+
+	json.NewEncoder(w).Encode(wifiIPAddress)
+}
