@@ -8,26 +8,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// StationsAvailableHandler returns available stations for /stations/available
-func StationsAvailableHandler(w http.ResponseWriter, r *http.Request) {
-	log.Info("Retrieving Available Stations")
-
-	code, responseData := sipCommand("AvailableStationsRequest", "00")
-
-	log.Debug(code)
-	log.Debug(responseData)
-
+func extractStationList(stationString string) []int {
 	// Based on code from rainbirdlib on Android
 	var j int64 = 0
 	var i int = 0
 	var j2 int64 = 0
 
-	setStations := responseData["setStations"]
-
-	for i < len(setStations)-1 {
+	for i < len(stationString)-1 {
 		i2 := i + 1
-		intValue, _ := strconv.ParseInt(string(setStations[i]), 16, 8)
-		int2Value, _ := strconv.ParseInt(string(setStations[i2]), 16, 8)
+		intValue, _ := strconv.ParseInt(string(stationString[i]), 16, 8)
+		int2Value, _ := strconv.ParseInt(string(stationString[i2]), 16, 8)
 
 		byteValue := byte(intValue)
 		byte2Value := byte(int2Value)
@@ -49,6 +39,33 @@ func StationsAvailableHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Debug(stationsList)
+
+	return stationsList
+}
+
+// StationsAvailableHandler returns available stations for /stations/available
+func StationsAvailableHandler(w http.ResponseWriter, r *http.Request) {
+	log.Info("Retrieving Available Stations")
+
+	code, responseData := sipCommand("AvailableStationsRequest", "00")
+
+	log.Debug(code)
+	log.Debug(responseData)
+
+	stationsList := extractStationList(responseData["setStations"])
+
+	json.NewEncoder(w).Encode(stationsList)
+}
+
+func StationsActiveHandler(w http.ResponseWriter, r *http.Request) {
+	log.Info("Retrieving Available Stations")
+
+	code, responseData := sipCommand("CurrentStationsActiveRequest", "00")
+
+	log.Debug(code)
+	log.Debug(responseData)
+
+	stationsList := extractStationList(responseData["activeStations"])
 
 	json.NewEncoder(w).Encode(stationsList)
 }

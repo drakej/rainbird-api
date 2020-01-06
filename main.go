@@ -53,9 +53,13 @@ func main() {
 	// Returns all Available Stations
 	r.HandleFunc("/stations/available", StationsAvailableHandler).Methods("GET")
 
+	// All active stations (if any)
+	r.HandleFunc("/stations/active", StationsActiveHandler).Methods("GET")
+
 	// Wifi Access Point Mode Enabled
 	r.HandleFunc("/wifi/apmode", WifiAPModeHandler).Methods("GET")
 
+	// Wifi IPv4 Address for RB stick
 	r.HandleFunc("/wifi/ip", WifiIPHandler).Methods("GET")
 
 	// Wifi configuration setup in the RainBird app initially
