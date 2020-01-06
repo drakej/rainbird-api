@@ -58,6 +58,12 @@ func main() {
 	// Stop all active irrigation
 	r.HandleFunc("/irrigation/stop", IrrigationStopHandler).Methods("GET")
 
+	// Gets the current Rain Delay
+	r.HandleFunc("/raindelay", RainDelayHandler).Methods("GET")
+
+	// Sets the current Rain Delay
+	r.HandleFunc("/raindelay", RainDelaySetHandler).Methods("POST")
+
 	// Returns all Available Stations
 	r.HandleFunc("/stations/available", StationsAvailableHandler).Methods("GET")
 
