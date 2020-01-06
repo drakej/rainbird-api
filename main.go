@@ -50,6 +50,9 @@ func main() {
 	// Whether irrigation is currently running
 	r.HandleFunc("/irrigation/state", IrrigationStateHandler).Methods("GET")
 
+	// Returns all Available Stations
+	r.HandleFunc("/stations/available", StationsAvailableHandler).Methods("GET")
+
 	// Wifi Access Point Mode Enabled
 	r.HandleFunc("/wifi/apmode", WifiAPModeHandler).Methods("GET")
 
