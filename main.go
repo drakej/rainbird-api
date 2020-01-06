@@ -30,7 +30,12 @@ func main() {
 	log.Info(viper.GetString("rest.port"))
 
 	r := mux.NewRouter().StrictSlash(true)
+
+	// Base with just a basic JSON meta set for the API itself
+	// Note: One idea might be to have this be a OpenAPI UI or something
 	r.HandleFunc("/", Index).Methods("GET")
+
+	// General Controller Information
 	r.HandleFunc("/controller", ControllerInfoHandler).Methods("GET")
 
 	// Serial Number of the controller (or maybe the WiFi module? should confirm), comes from local API
@@ -49,6 +54,9 @@ func main() {
 
 	// Whether irrigation is currently running
 	r.HandleFunc("/irrigation/state", IrrigationStateHandler).Methods("GET")
+
+	// Stop all active irrigation
+	r.HandleFunc("/irrigation/stop", IrrigationStopHandler).Methods("GET")
 
 	// Returns all Available Stations
 	r.HandleFunc("/stations/available", StationsAvailableHandler).Methods("GET")
