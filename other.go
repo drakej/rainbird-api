@@ -28,3 +28,14 @@ func RainSensorHandler(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(responseData)
 }
+
+func SeasonalAdjustHandler(w http.ResponseWriter, r *http.Request) {
+	log.Info("Getting current seasonal adjustment factor")
+
+	code, responseData := sipCommand("ZonesSeasonalAdjustFactorRequest")
+
+	log.Debug(code)
+	log.Debug(responseData)
+
+	json.NewEncoder(w).Encode(responseData)
+}

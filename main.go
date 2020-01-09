@@ -69,6 +69,9 @@ func main() {
 	// Reports the state of the rain sensor
 	r.HandleFunc("/rainsensor", RainSensorHandler).Methods("GET")
 
+	// Current Seasonal Adjustment Factor
+	r.HandleFunc("/seasonaladjust", SeasonalAdjustHandler).Methods("GET")
+
 	// Returns all Available Stations
 	r.HandleFunc("/stations/available", StationsAvailableHandler).Methods("GET")
 
