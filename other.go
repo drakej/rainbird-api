@@ -17,3 +17,14 @@ func ZipCodeHandler(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(responseData.Result)
 }
+
+func RainSensorHandler(w http.ResponseWriter, r *http.Request) {
+	log.Info("Getting Rain Sensor State")
+
+	code, responseData := sipCommand("CurrentRainSensorStateRequest")
+
+	log.Debug(code)
+	log.Debug(responseData)
+
+	json.NewEncoder(w).Encode(responseData)
+}
