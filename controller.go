@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 )
 
+// ControllerInfo is a composite of various API JSON results
 type ControllerInfo struct {
 	StationNames      map[string]interface{}
 	AvailableStations []interface{}
@@ -21,16 +22,19 @@ type ControllerInfo struct {
 	Version           string
 }
 
+// SerialNumber for controller?
 type SerialNumber struct {
 	SerialNumber string
 }
 
+// ModelVersion  of the controller?
 type ModelVersion struct {
 	Model                 int
 	ProtocolRevisionMajor int
 	ProtocolRevisionMinor int
 }
 
+// FirmwareVersion of the controller?
 type FirmwareVersion struct {
 	FirmwareRevisionMajor int64
 	FirmwareRevisionMinor int64
@@ -75,6 +79,7 @@ var controllerModels map[int]string = map[int]string{
 	266: "ESP-TM2v3",
 }
 
+// ControllerInfoHandler returns a summary of the RB controller
 func ControllerInfoHandler(w http.ResponseWriter, r *http.Request) {
 	if controllerInfo.Name == "" {
 		log.Info("Retrieving Controller Info from RainBird Cloud")
@@ -129,6 +134,7 @@ func ControllerInfoHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(controllerInfo)
 }
 
+// ControllerSerialNumberHandler returns the SerialNumber for the controller
 func ControllerSerialNumberHandler(w http.ResponseWriter, r *http.Request) {
 	if serialNumber.SerialNumber == "" {
 		log.Info("Retrieving Controller Serial Number from Local API")
@@ -146,6 +152,7 @@ func ControllerSerialNumberHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(serialNumber)
 }
 
+// ControllerModelVersionHandler returns the ModelVersion for the controller
 func ControllerModelVersionHandler(w http.ResponseWriter, r *http.Request) {
 	if modelVersion.Model == 0 {
 		log.Info("Retrieving Controller Model & Protocol Version from Local API")
@@ -183,6 +190,7 @@ func ControllerModelVersionHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(modelVersion)
 }
 
+// ControllerFWVersionHandler returns the firmware version for the controller
 func ControllerFWVersionHandler(w http.ResponseWriter, r *http.Request) {
 	if firmwareVersion.FirmwareRevisionMajor == 0 {
 		log.Info("Retrieving Controller Firmware Version from Local API")
@@ -215,6 +223,7 @@ func ControllerFWVersionHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(firmwareVersion)
 }
 
+// ControllerTimeHandler returns current time frome the controller
 func ControllerTimeHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("Retrieving Controller Time from Local API")
 
