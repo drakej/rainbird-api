@@ -57,6 +57,7 @@ func StationsAvailableHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(stationsList)
 }
 
+// StationsActiveHandler returns the active stations
 func StationsActiveHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("Retrieving Available Stations")
 

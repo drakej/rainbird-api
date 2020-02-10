@@ -12,37 +12,21 @@ import (
 	"github.com/spf13/viper"
 )
 
+// RPCRequest for JSONRPC
 type RPCRequest struct {
-	Id      int                    `json:"id"`
+	ID      int                    `json:"id"`
 	Method  string                 `json:"method"`
 	Params  map[string]interface{} `json:"params"`
-	JsonRPC string                 `json:"jsonrpc"`
+	JSONRPC string                 `json:"jsonrpc"`
 }
 
-type CloudController struct {
-	StationNames      map[int]string `json:"customStationNames"`
-	AvailableStations []int          `json:"availableStations"`
-	Name              string         `json:"customName"`
-	ProgramNames      map[int]string `json:"customProgramNames"`
-}
-
-type ConnectedStatus struct {
-}
-
-type CloudService struct {
-	Status    int               `json:"Status"`
-	CompanyId int               `json:"CompanyId"`
-	Enabled   bool              `json:"Enabled"`
-	Params    map[string]string `json:"Params"`
-	Name      string            `json:"Name"`
-}
-
+// cloudRPCCommand sends a JSON RPC command request to the RB cloud
 func cloudRPCCommand(method string, params map[string]interface{}) RPCResponse {
 	requestData := RPCRequest{
-		Id:      int(time.Now().Unix()),
+		ID:      int(time.Now().Unix()),
 		Method:  method,
 		Params:  params,
-		JsonRPC: "2.0",
+		JSONRPC: "2.0",
 	}
 
 	jsonData, err := json.Marshal(requestData)
@@ -74,14 +58,15 @@ func cloudRPCCommand(method string, params map[string]interface{}) RPCResponse {
 	return rpcResponse
 }
 
+// getStickIPAddress returns the local IP of the WiFi module by requesting it from the RB cloud
 func getStickIPAddress() string {
 	response := cloudRPCCommand("getStickIpAddress", map[string]interface{}{
 		"StickId": viper.GetString("controller.mac"),
 	})
 
-	stickIp := response.Result["IpAddress"].(string)
+	stickIP := response.Result["IpAddress"].(string)
 
-	viper.Set("controller.ip", stickIp)
+	viper.Set("controller.ip", stickIP)
 
-	return stickIp
+	return stickIP
 }

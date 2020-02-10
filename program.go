@@ -14,6 +14,7 @@ var soilTypes map[int]string = map[int]string{
 	3: "Other",
 }
 
+// ProgramInfoHandler returns information about the request program
 func ProgramInfoHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("Request Program Info")
 

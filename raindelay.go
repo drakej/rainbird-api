@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// RainDelayHandler returns the current rain delay
 func RainDelayHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("Requesting Rain Delay setting")
 
@@ -25,6 +26,7 @@ func RainDelayHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]int64{"RainDelayDays": delayDays})
 }
 
+// RainDelaySetHandler sets the current rain delay
 func RainDelaySetHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("Setting Rain Delay setting")
 
