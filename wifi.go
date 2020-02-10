@@ -11,7 +11,7 @@ import (
 func WifiAPModeHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("Retrieving Wifi APMode")
 
-	code, responseData := rpcCommand("getApMode", map[string]interface{}{})
+	responseData, code := rpcCommand("getApMode", map[string]interface{}{})
 
 	log.Debug(code)
 	log.Debug(responseData)
@@ -23,7 +23,7 @@ func WifiAPModeHandler(w http.ResponseWriter, r *http.Request) {
 func WifiConfigHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("Retrieving Wifi Configuration from Local API")
 
-	code, responseData := rpcCommand("getWifiParams", map[string]interface{}{})
+	responseData, code := rpcCommand("getWifiParams", map[string]interface{}{})
 
 	log.Debug(code)
 	log.Debug(responseData)
@@ -47,7 +47,7 @@ func WifiIPHandler(w http.ResponseWriter, r *http.Request) {
 func WifiNetworkHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("Retrieving Wifi Network Status")
 
-	code, responseData := rpcCommand("getNetworkStatus", map[string]interface{}{})
+	responseData, code := rpcCommand("getNetworkStatus", map[string]interface{}{})
 
 	log.Debug(code)
 	log.Debug(responseData)
