@@ -10,6 +10,7 @@ import (
 
 var irrigationState bool
 
+// IrrigationStateHandler responds to /irrigation/state GET requests
 func IrrigationStateHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("Retrieving Irrigation State from Local API")
 
@@ -27,6 +28,7 @@ func IrrigationStateHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(irrigationState)
 }
 
+// IrrigationStopHandler responds to /irrigation/stop GET requests
 func IrrigationStopHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("Sending StopIrrigationRequest")
 
