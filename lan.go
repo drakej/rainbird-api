@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -15,41 +14,35 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Command is a SIP command object
 type Command struct {
 	Length   int    `json:"length"`
 	Command  string `json:"command"`
 	Response string `json:"response"`
 }
 
+// Response from SIP Command
 type Response struct {
 	Length int              `json:"length"`
 	Type   string           `json:"type"`
 	Params map[string]Param `json:"params"`
 }
 
-type LANRPCResponse struct {
-	Id      int       `json:"id"`
-	Result  LANResult `json:"result"`
-	JsonRPC string    `json:"jsonrpc"`
-}
-
+// RPCResponse from JSON RPC command
 type RPCResponse struct {
-	Id      int                    `json:"id"`
+	ID      int                    `json:"id"`
 	Result  map[string]interface{} `json:"result"`
-	JsonRPC string                 `json:"jsonrpc"`
+	JSONRPC string                 `json:"jsonrpc"`
 }
 
-type LANResult struct {
-	Length int    `json:"length"`
-	Data   string `json:"data"`
-}
-
+// SIPConfig represents a lookup of SIP commands
 type SIPConfig struct {
 	Loaded    bool
 	Commands  map[string]Command  `json:"ControllerCommands"`
 	Responses map[string]Response `json:"ControllerResponses"`
 }
 
+// Param for  SIP Commands
 type Param struct {
 	Position int `json:"position"`
 	Length   int `json:"length"`
@@ -71,14 +64,14 @@ var localIPv4Address string
 var zipCode int
 var country string
 
-func rpcCommand(method string, params map[string]interface{}) (error, RPCResponse) {
+func rpcCommand(method string, params map[string]interface{}) (RPCResponse, error) {
 	now := time.Now()
 
 	payload := RPCRequest{
-		Id:      int(now.Unix()),
+		ID:      int(now.Unix()),
 		Method:  method,
 		Params:  params,
-		JsonRPC: `2.0`,
+		JSONRPC: `2.0`,
 	}
 
 	log.Debug(payload)
@@ -126,14 +119,14 @@ func rpcCommand(method string, params map[string]interface{}) (error, RPCRespons
 			log.Error(err)
 		}
 	} else if response.StatusCode == 503 {
-		return errors.New(fmt.Sprintf("rpcResponse: Error code %d received, the controller is most likely locked/busy", response.StatusCode)), rpcResponse
+		return rpcResponse, fmt.Errorf("rpcResponse: Error code %d received, the controller is most likely locked/busy", response.StatusCode)
 	}
 
-	return nil, rpcResponse
+	return rpcResponse, nil
 }
 
 func getZipCode() (int, string) {
-	err, response := rpcCommand("getZipCode", map[string]interface{}{})
+	response, err := rpcCommand("getZipCode", map[string]interface{}{})
 
 	if err != nil {
 		return -1, ""
@@ -155,7 +148,7 @@ func sipCommand(command string, args ...string) (string, map[string]string) {
 		data = data + arg
 	}
 
-	err, rpcResponse := rpcCommand(`tunnelSip`, map[string]interface{}{
+	rpcResponse, err := rpcCommand(`tunnelSip`, map[string]interface{}{
 		"data":   data,
 		"length": commandData.Length,
 	})
