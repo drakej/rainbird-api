@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Encrypt encrypts data using RB's API method with aes sha256
 func Encrypt(data string, key string) string {
 	codeData := data + "\x00\x10"
 
@@ -54,6 +55,7 @@ func Encrypt(data string, key string) string {
 	return string(b2) + string(ciphertext)
 }
 
+// Decrypt decrypts data using RB's API method with aes sha256
 func Decrypt(encryptedData string, key string) string {
 	iv := []byte(encryptedData[32:48])
 
