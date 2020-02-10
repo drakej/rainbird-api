@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// WifiAPModeHandler responds to /wifi/ap GET requests
 func WifiAPModeHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("Retrieving Wifi APMode")
 
@@ -18,6 +19,7 @@ func WifiAPModeHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(responseData.Result)
 }
 
+// WifiConfigHandler responds to /wifi/config GET requests
 func WifiConfigHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("Retrieving Wifi Configuration from Local API")
 
@@ -32,6 +34,7 @@ func WifiConfigHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(responseData.Result)
 }
 
+// WifiIPHandler responds to /wifi/ipv4 GET requests
 func WifiIPHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("Retrieving Wifi IPv4 Address")
 
@@ -40,6 +43,7 @@ func WifiIPHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(wifiIPAddress)
 }
 
+// WifiNetworkHandler responds to /wifi/network GET requests
 func WifiNetworkHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("Retrieving Wifi Network Status")
 
