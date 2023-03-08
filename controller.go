@@ -120,14 +120,28 @@ func ControllerInfoHandler(w http.ResponseWriter, r *http.Request) {
 
 		version := fmt.Sprintf("%d.%d", protocolRevisionMajor, protocolRevisionMinor)
 
+		log.Debug(controllerData)
+
 		controllerInfo = ControllerInfo{
-			StationNames:      controllerData["customStationNames"].(map[string]interface{}),
-			AvailableStations: controllerData["availableStations"].([]interface{}),
-			Name:              controllerData["customName"].(string),
-			ProgramNames:      controllerData["customProgramNames"].(map[string]interface{}),
-			SerialNumber:      serialData["serialNumber"],
-			Model:             controllerModels[model],
-			Version:           version,
+			StationNames:      nil,
+			AvailableStations: nil,
+			Name:              "",
+			ProgramNames:      nil,
+			SerialNumber:      "",
+			Model:             "",
+			Version:           "",
+		}
+
+		if len(controllerData) > 0 {
+			controllerInfo = ControllerInfo{
+				StationNames:      controllerData["customStationNames"].(map[string]interface{}),
+				AvailableStations: controllerData["availableStations"].([]interface{}),
+				Name:              controllerData["customName"].(string),
+				ProgramNames:      controllerData["customProgramNames"].(map[string]interface{}),
+				SerialNumber:      serialData["serialNumber"],
+				Model:             controllerModels[model],
+				Version:           version,
+			}
 		}
 	}
 
