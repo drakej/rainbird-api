@@ -10,12 +10,13 @@ import (
 func ZipCodeHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("Getting Zip Code and Country")
 
-	code, responseData := rpcCommand("getZipCode", map[string]interface{}{})
+	response, err := rpcCommand("getZipCode", map[string]interface{}{})
 
-	log.Debug(code)
-	log.Debug(responseData)
+	if err != nil {
+		log.Error(err)
+	}
 
-	json.NewEncoder(w).Encode(responseData.Result)
+	json.NewEncoder(w).Encode(response.Result)
 }
 
 func RainSensorHandler(w http.ResponseWriter, r *http.Request) {
