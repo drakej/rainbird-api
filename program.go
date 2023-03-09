@@ -18,11 +18,13 @@ var soilTypes map[int]string = map[int]string{
 func ProgramInfoHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("Request Program Info")
 
-	responseData, code := rpcCommand("getProgramInfo", map[string]interface{}{})
+	response, err := rpcCommand("getProgramInfo", map[string]interface{}{})
 
-	log.Debug(code)
-	log.Debug(responseData)
-	programSoilTypes := responseData.Result["SoilTypes"].([]interface{})
+	if err != nil {
+		log.Error(err)
+	}
+
+	programSoilTypes := response.Result["SoilTypes"].([]interface{})
 
 	programs := map[int]map[string]interface{}{
 		0: {
