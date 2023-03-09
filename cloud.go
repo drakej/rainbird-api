@@ -64,7 +64,11 @@ func getStickIPAddress() string {
 		"StickId": viper.GetString("controller.mac"),
 	})
 
-	stickIP := response.Result["IpAddress"].(string)
+	stickIP := ""
+
+	if response.Result["IpAddress"] != nil {
+		stickIP = response.Result["IpAddress"].(string)
+	}
 
 	viper.Set("controller.ip", stickIP)
 
